@@ -16,34 +16,18 @@ var users_count = 0;
 var upvote_count = 0;
 var users = {};
 class RoboBoat {
-    constructor(lat, lon) {
+    constructor(lat, lon, socket_id) {
         this.lat = lat
         this.lon = lon
         this.userid = null
+        this.socket_id = socket_id
         this.colors = ['blue', 'blue', 'red', 'green', 'purple']
-        this.color = null
+        //this.color = this.colors[user_num];
+        this.color = 'blue';
         this.random = 0
         this.geo_fence_lat = .0004
         this.step_size = .001
         this.location_history = []
-    }
-    add_user_info(userid) {
-        this.userid = userid
-        this.color = this.colors[this.userid]
-        this.adjustments = {}
-        this.adjustments['blue'] = 38.8580
-        this.adjustments['red'] = 38.8583
-        this.adjustments['green'] = 38.8589
-        this.adjustments['purple'] = 38.8582
-
-        this.lat = this.adjustments[this.color];
-        console.log(this.lat)
-
-    }
-    get_loc() {
-        this.lon = this.lon + this.step_size;
-        this.lat = this.lat;
-        this.location_history.push([this.lat, this.lon]);
     }
     updateLocation(lat, lon) {
         this.lat = lat;
@@ -54,21 +38,38 @@ class RoboBoat {
 }
 io.on('connection', function (socket) {
     console.log('a user has connected!');
-    users_count = users_count + 1;
-    io.emit('connection', users_count);
+    users[socket.id] = new RoboBoat(0, 0, socket.id);
+    io.emit('connection', socket.id);
 
     socket.on('disconnect', function () {
         console.log('user disconnected');
     });
 
 
-    socket.on('update-location', function (user_obj) {
-        users[user_obj.userid] = user_obj
+    setInterval(function () {
         for (const [key, value] of Object.entries(users)) {
-            console.log(`${key}: ${value.color}`);
-            console.log(`${key}: ${value.lat}`);
-            console.log(`${key}: ${value.lon}`);
+            console.log(key);
+            io.to(key).emit('request-location', key);
         }
-        io.emit('sync-locations-map', users);
+    }, 5000);
+    socket.on('get-location', function (socket_id, location) {
+        console.log();
+        console.log("-----");
+        console.log(socket_id);
+        console.log(location);
     });
 });
+
+
+
+
+//socket.on('update-location', function (user_obj) {
+//    users[user_obj.userid] = user_obj
+//    for (const [key, value] of Object.entries(users)) {
+//        console.log(`${key}: ${value.color}`);
+//        console.log(`${key}: ${value.lat}`);
+//        console.log(`${key}: ${value.lon}`);
+//    }
+//    io.emit('sync-locations-map', users);
+//});
+

@@ -32,62 +32,41 @@
     <p>Click the button to get your coordinates.</p>
 
 
-
-
-    <button onclick="getLocation()">Try It</button>
-
-    <p id="demo"></p>
-
+    <br><br><br>
     <div id="map" style="width: 600px; height: 400px;"></div>
 
 
     <script>
-        class RoboBoat {
-            constructor(lat, lon) {
-                this.lat = lat
-                this.lon = lon
-                this.userid = null
-                this.colors = ['blue', 'blue', 'red', 'green', 'purple']
-                this.color = null
-                this.random = 0
-                this.geo_fence_lat = .0004
-                this.step_size = .001
-                this.location_history = []
-            }
-            add_user_info(userid) {
-                this.userid = userid
-                this.color = this.colors[this.userid]
-                this.adjustments = {}
-                this.adjustments['blue'] = 38.8580
-                this.adjustments['red'] = 38.8583
-                this.adjustments['green'] = 38.8589
-                this.adjustments['purple'] = 38.8582
-
-                this.lat = this.adjustments[this.color];
-                console.log(this.lat)
-
-            }
-            get_loc() {
-                this.lon = this.lon + this.step_size;
-                this.lat = this.lat;
-                this.location_history.push([this.lat, this.lon]);
-            }
-            updateLocation(lat, lon) {
-                this.lat = lat;
-                this.lon = lon;
-                this.location_history.push([this.lat, this.lon]);
-            }
-
-        }
+        
         var socket = io();
-        const test_robo = new RoboBoat(38.8582, -77.04130);
+        var socket_id = null;
+        var users = 0;
+        function success(position) {
+            //retrieve lat and long
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+            console.log([latitude, longitude]);
+            socket.emit('get-location', socket_id, [latitude, longitude]);
+        }
 
+        function error() {
+            return [0, 0];
+        }
+
+
+        
 
         socket.on('connection', function (userid) {
-            test_robo.add_user_info(userid)
-            console.log(test_robo.color)
+            console.log(userid, "Joined");
+            socket_id = userid;
         });
-
+        socket.on('request-location', function () {
+            console.log("... getting location");
+            navigator.geolocation.getCurrentPosition(success, error);
+            //console.log(loc);
+            //users = users + 1;
+            //socket.emit('get-location', socket_id, loc);
+        });
 
 
         const map = L.map('map').setView([38.8512, -77.0403], 13);
@@ -97,46 +76,10 @@
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        function success(position) {
-            //retrieve lat and long
-            var latitude = position.coords.latitude;
-            var longitude = position.coords.longitude;
-            test_robo.updateLocation(latitude, longitude)
-        }
-
-        function error() {
-            console.log("err");
-        }
-        var polyline_tracker = {}
 
 
-        //var polyline = L.polyline(d.coordinates, { color: 'red', weight: 12 }).addTo(map);
-        //const test_robo = new RoboBoat(10, 10)
-        window.setInterval(function () {
-            navigator.geolocation.getCurrentPosition(success, error);
 
-
-            //test_robo.set_polyline();
-            socket.emit('update-location', test_robo);
-            socket.on('sync-locations-map', function (users) {
-                for (const [key, value] of Object.entries(users)) {
-                    if (key in polyline_tracker) {
-                        polyline_tracker[key].remove();
-                        polyline_tracker[key] = null;
-                    }
-                    //console.log('${key}', key);
-                    //console.log('color: ', value.color);
-                    //console.log('Lat: ', value.lat);
-                    console.log(value.color);
-                    console.log('Loc History: ', value.location_history);
-                    //console.log('Lon', value.lon);
-                    //polyline_tracker[key] = L.polyline(value.location_history, { color: value.color, weight: 2 });
-                    //polyline_tracker[key].addTo(map);
-                }
-            })
-
-
-        }, 5000);</script>
+    </script>
 
 
 
