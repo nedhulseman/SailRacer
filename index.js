@@ -39,7 +39,7 @@ class RoboBoat {
 io.on('connection', function (socket) {
     console.log('a user has connected!');
     users[socket.id] = new RoboBoat(0, 0, socket.id);
-    io.emit('connection', socket.id);
+    io.emit('connection');
 
     socket.on('disconnect', function () {
         console.log('user disconnected');
@@ -47,16 +47,12 @@ io.on('connection', function (socket) {
 
 
     setInterval(function () {
-        for (const [key, value] of Object.entries(users)) {
-            console.log(key);
-            io.to(key).emit('request-location', key);
-        }
+        io.emit('request-location');
     }, 5000);
     socket.on('get-location', function (socket_id, location) {
-        console.log();
-        console.log("-----");
-        console.log(socket_id);
-        console.log(location);
+        console.log(socket_id, location);
+        users[socket_id].updateLocation(location[0], location[1]);
+        io.emit('push-location-html', users);
     });
 });
 
